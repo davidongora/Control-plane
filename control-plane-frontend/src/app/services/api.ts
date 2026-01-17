@@ -10,6 +10,8 @@ export interface Server {
   ip_address: string;
   port: number;
   username: string;
+  password?: string;
+  ssh_key?: string;
   description?: string;
   is_active: boolean;
   services_count?: number;
