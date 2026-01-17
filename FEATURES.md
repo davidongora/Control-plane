@@ -76,7 +76,27 @@
 - Deployment tracking
 - Quick project reference
 
-### 6. Visual Dashboard
+### 6. Database Client
+**Web-based SQL query interface for databases**
+
+- ✅ Connect to PostgreSQL, MySQL, and SQLite databases
+- ✅ Execute SQL queries through web interface
+- ✅ Browse database tables and schemas
+- ✅ View query results in tabular format
+- ✅ Pagination for large result sets
+- ✅ Encrypted password storage
+- ✅ Read-only mode by default
+- ✅ Optional write operations (INSERT/UPDATE/DELETE)
+- ✅ Query validation and SQL injection protection
+- ✅ Query timeout enforcement
+
+**Benefits:**
+- No need for separate database clients
+- Quick database queries from anywhere
+- Secure credential management
+- Built-in security controls
+
+### 7. Visual Dashboard
 **Modern, responsive web interface**
 
 - ✅ Overview statistics
@@ -91,7 +111,7 @@
 - User-friendly interface
 - Works on desktop and tablet
 
-### 7. REST API
+### 8. REST API
 **Complete programmatic access**
 
 - ✅ RESTful API design
@@ -106,7 +126,7 @@
 - Automation possibilities
 - Scriptable operations
 
-### 8. Security Features
+### 9. Security Features
 **Built-in security measures**
 
 - ✅ SSH key authentication support
@@ -115,7 +135,10 @@
 - ✅ CORS protection
 - ✅ CSRF protection
 - ✅ Input validation
-- ✅ SQL injection protection (Django ORM)
+- ✅ SQL injection protection (Django ORM + query validation)
+- ✅ Encrypted database passwords (Fernet encryption)
+- ✅ Table name validation for database queries
+- ✅ Query timeout enforcement
 
 **Benefits:**
 - Secure credential storage
@@ -208,7 +231,7 @@
 - [ ] Multi-user support with teams
 - [ ] Scheduled tasks/cron management
 - [ ] Container management (Docker)
-- [ ] Database query interface
+- ✅ Database query interface
 - [ ] File browser/editor
 
 ### Long Term
