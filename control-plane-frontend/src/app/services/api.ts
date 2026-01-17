@@ -95,6 +95,18 @@ export interface QueryResult {
   error?: string;
 }
 
+export interface UserManagement {
+  id?: number;
+  username: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  is_staff: boolean;
+  is_active: boolean;
+  date_joined?: string;
+  password?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -278,5 +290,34 @@ export class Api {
 
   getDatabaseRecords(id: number, tableName: string, page: number = 1, pageSize: number = 100): Observable<QueryResult> {
     return this.http.get<QueryResult>(`${this.baseUrl}/database-clients/${id}/records/?table_name=${tableName}&page=${page}&page_size=${pageSize}`);
+  }
+
+  // User management endpoints
+  getUsers(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/users/`);
+  }
+
+  getUser(id: number): Observable<UserManagement> {
+    return this.http.get<UserManagement>(`${this.baseUrl}/users/${id}/`);
+  }
+
+  createUser(user: UserManagement): Observable<UserManagement> {
+    return this.http.post<UserManagement>(`${this.baseUrl}/users/`, user);
+  }
+
+  updateUser(id: number, user: Partial<UserManagement>): Observable<UserManagement> {
+    return this.http.put<UserManagement>(`${this.baseUrl}/users/${id}/`, user);
+  }
+
+  deleteUser(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/users/${id}/`);
+  }
+
+  changeUserPassword(id: number, newPassword: string): Observable<any> {
+    return this.http.patch(`${this.baseUrl}/users/${id}/change_password/`, { new_password: newPassword });
+  }
+
+  getCurrentUserProfile(): Observable<UserManagement> {
+    return this.http.get<UserManagement>(`${this.baseUrl}/users/me/`);
   }
 }

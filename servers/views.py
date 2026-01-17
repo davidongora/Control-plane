@@ -2,14 +2,15 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.models import User
 
 from .models import Server, Service, NginxSite, Project, ServerHealthMetrics, DatabaseClient
 from .serializers import (
     ServerSerializer, ServerCreateSerializer, ServiceSerializer,
     NginxSiteSerializer, ProjectSerializer, ServerHealthMetricsSerializer,
-    DatabaseClientSerializer
+    DatabaseClientSerializer, UserManagementSerializer
 )
 from .ssh_manager import SSHConnectionManager
 from .service_managers import ServiceManager, NginxManager, GunicornManager, DatabaseManager
@@ -557,3 +558,33 @@ class DatabaseClientViewSet(viewsets.ModelViewSet):
                 'rows': [],
                 'total_rows': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing users (admin only)."""
+    queryset = User.objects.all()
+    serializer_class = UserManagementSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        """Get current user information."""
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['patch'])
+    def change_password(self, request, pk=None):
+        """Change user password."""
+        user = self.get_object()
+        new_password = request.data.get('new_password')
+        
+        if not new_password:
+            return Response(
+                {'error': 'new_password is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        user.set_password(new_password)
+        user.save()
+        
+        return Response({'message': 'Password changed successfully'})

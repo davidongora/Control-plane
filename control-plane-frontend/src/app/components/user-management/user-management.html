@@ -1,0 +1,255 @@
+<div class="user-management-container">
+  <div class="header">
+    <h1>User Management</h1>
+    <button (click)="toggleAddForm()" class="btn-primary">
+      {{ showAddForm ? 'Cancel' : 'Add User' }}
+    </button>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="success-message">
+    {{ successMessage }}
+  </div>
+  
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Add User Form -->
+  <div *ngIf="showAddForm" class="add-form">
+    <h2>Add New User</h2>
+    
+    <form [formGroup]="userForm" (ngSubmit)="addUser()">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Username *</label>
+          <input type="text" formControlName="username" class="form-control"
+                 [class.invalid]="userForm.get('username')?.invalid && userForm.get('username')?.touched">
+          <div class="error-text" *ngIf="userForm.get('username')?.invalid && userForm.get('username')?.touched">
+            <span *ngIf="userForm.get('username')?.errors?.['required']">Username is required</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" formControlName="email" class="form-control"
+                 [class.invalid]="userForm.get('email')?.invalid && userForm.get('email')?.touched">
+          <div class="error-text" *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched">
+            <span *ngIf="userForm.get('email')?.errors?.['email']">Invalid email format</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" formControlName="first_name" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" formControlName="last_name" class="form-control">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" formControlName="password" class="form-control"
+                 [class.invalid]="userForm.get('password')?.invalid && userForm.get('password')?.touched">
+          <div class="error-text" *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched">
+            <span *ngIf="userForm.get('password')?.errors?.['required']">Password is required</span>
+            <span *ngIf="userForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="is_staff">
+            Is Staff (Admin)
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="is_active">
+            Is Active
+          </label>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" [disabled]="submitting">
+          {{ submitting ? 'Creating...' : 'Create User' }}
+        </button>
+        <button type="button" class="btn-secondary" (click)="toggleAddForm()" [disabled]="submitting">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Edit User Form -->
+  <div *ngIf="showEditForm" class="modal-overlay" (click)="cancelEdit()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Edit User</h2>
+      
+      <form [formGroup]="editForm" (ngSubmit)="updateUser()">
+        <div class="form-group">
+          <label>Username *</label>
+          <input type="text" formControlName="username" class="form-control"
+                 [class.invalid]="editForm.get('username')?.invalid && editForm.get('username')?.touched">
+          <div class="error-text" *ngIf="editForm.get('username')?.invalid && editForm.get('username')?.touched">
+            <span *ngIf="editForm.get('username')?.errors?.['required']">Username is required</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" formControlName="email" class="form-control"
+                 [class.invalid]="editForm.get('email')?.invalid && editForm.get('email')?.touched">
+          <div class="error-text" *ngIf="editForm.get('email')?.invalid && editForm.get('email')?.touched">
+            <span *ngIf="editForm.get('email')?.errors?.['email']">Invalid email format</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" formControlName="first_name" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" formControlName="last_name" class="form-control">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="is_staff">
+              Is Staff (Admin)
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="is_active">
+              Is Active
+            </label>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" [disabled]="submitting">
+            {{ submitting ? 'Updating...' : 'Update User' }}
+          </button>
+          <button type="button" class="btn-secondary" (click)="cancelEdit()" [disabled]="submitting">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Password Form -->
+  <div *ngIf="showPasswordForm" class="modal-overlay" (click)="cancelPasswordForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Change Password for {{ selectedUser?.username }}</h2>
+      
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+        <div class="form-group">
+          <label>New Password *</label>
+          <input type="password" formControlName="new_password" class="form-control"
+                 [class.invalid]="passwordForm.get('new_password')?.invalid && passwordForm.get('new_password')?.touched">
+          <div class="error-text" *ngIf="passwordForm.get('new_password')?.invalid && passwordForm.get('new_password')?.touched">
+            <span *ngIf="passwordForm.get('new_password')?.errors?.['required']">Password is required</span>
+            <span *ngIf="passwordForm.get('new_password')?.errors?.['minlength']">Password must be at least 8 characters</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Confirm Password *</label>
+          <input type="password" formControlName="confirm_password" class="form-control"
+                 [class.invalid]="passwordForm.get('confirm_password')?.invalid && passwordForm.get('confirm_password')?.touched">
+          <div class="error-text" *ngIf="passwordForm.errors?.['passwordMismatch'] && passwordForm.get('confirm_password')?.touched">
+            Passwords do not match
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" [disabled]="submitting">
+            {{ submitting ? 'Changing...' : 'Change Password' }}
+          </button>
+          <button type="button" class="btn-secondary" (click)="cancelPasswordForm()" [disabled]="submitting">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <input type="text" 
+           [(ngModel)]="searchQuery" 
+           placeholder="Search users by username, email, or name..." 
+           class="search-input">
+  </div>
+
+  <!-- Users Table -->
+  <div *ngIf="loading" class="loading">Loading users...</div>
+
+  <div *ngIf="!loading" class="table-container">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>Staff</th>
+          <th>Active</th>
+          <th>Date Joined</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of filteredUsers">
+          <td><strong>{{ user.username }}</strong></td>
+          <td>{{ user.email || 'N/A' }}</td>
+          <td>{{ user.first_name || 'N/A' }}</td>
+          <td>{{ user.last_name || 'N/A' }}</td>
+          <td>
+            <label class="toggle-switch">
+              <input type="checkbox" 
+                     [checked]="user.is_staff" 
+                     (change)="toggleStaff(user)">
+              <span class="slider"></span>
+            </label>
+          </td>
+          <td>
+            <label class="toggle-switch">
+              <input type="checkbox" 
+                     [checked]="user.is_active" 
+                     (change)="toggleActive(user)">
+              <span class="slider"></span>
+            </label>
+          </td>
+          <td>{{ formatDate(user.date_joined) }}</td>
+          <td class="actions">
+            <button class="btn-icon btn-edit" (click)="editUser(user)" title="Edit User">
+              ✏️
+            </button>
+            <button class="btn-icon btn-password" (click)="openPasswordForm(user)" title="Change Password">
+              🔑
+            </button>
+            <button class="btn-icon btn-delete" (click)="deleteUser(user)" title="Delete User">
+              🗑️
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="filteredUsers.length === 0">
+          <td colspan="8" class="no-data">No users found</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
