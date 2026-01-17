@@ -321,7 +321,7 @@ class DatabaseClientViewSet(viewsets.ModelViewSet):
     """ViewSet for managing database clients."""
     queryset = DatabaseClient.objects.all()
     serializer_class = DatabaseClientSerializer
-    permission_classes = []  # AllowAny for demo
+    permission_classes = []  # AllowAny for demo - TODO: Add authentication in production
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -405,6 +405,7 @@ class DatabaseClientViewSet(viewsets.ModelViewSet):
                 'error': 'table_name parameter is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # Validate table name (validation is done in database_manager)
         try:
             db_manager = DatabaseQueryManager(
                 db_type=db_client.db_type,
@@ -435,8 +436,20 @@ class DatabaseClientViewSet(viewsets.ModelViewSet):
         db_client = self.get_object()
         query = request.data.get('query', '').strip()
         allow_write = request.data.get('allow_write', False)
-        page = int(request.data.get('page', 1))
-        page_size = int(request.data.get('page_size', 100))
+        
+        # Validate and convert pagination parameters
+        try:
+            page = int(request.data.get('page', 1))
+            page_size = int(request.data.get('page_size', 100))
+            if page < 1:
+                page = 1
+            if page_size < 1 or page_size > 1000:
+                page_size = 100
+        except (ValueError, TypeError):
+            return Response({
+                'success': False,
+                'error': 'Invalid pagination parameters'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         if not query:
             return Response({
@@ -480,13 +493,34 @@ class DatabaseClientViewSet(viewsets.ModelViewSet):
         """Get records from a table with pagination."""
         db_client = self.get_object()
         table_name = request.query_params.get('table_name')
-        page = int(request.query_params.get('page', 1))
-        page_size = int(request.query_params.get('page_size', 100))
+        
+        # Validate and convert pagination parameters
+        try:
+            page = int(request.query_params.get('page', 1))
+            page_size = int(request.query_params.get('page_size', 100))
+            if page < 1:
+                page = 1
+            if page_size < 1 or page_size > 1000:
+                page_size = 100
+        except (ValueError, TypeError):
+            return Response({
+                'success': False,
+                'error': 'Invalid pagination parameters'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         if not table_name:
             return Response({
                 'success': False,
                 'error': 'table_name parameter is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate table name to prevent SQL injection
+        # Import validation function from database_manager
+        from .database_manager import validate_identifier
+        if not validate_identifier(table_name):
+            return Response({
+                'success': False,
+                'error': 'Invalid table name. Table names must start with a letter or underscore and contain only alphanumeric characters and underscores.'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Construct a safe SELECT query

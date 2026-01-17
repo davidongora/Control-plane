@@ -122,13 +122,15 @@ Located in `control-plane-frontend/src/app/components/database-client/`
 5. View results in the table below
 6. Use pagination controls for large result sets
 
-### Security Notes
+## Security Notes
 
 - Only SELECT queries are allowed by default
 - Check "Allow Write Operations" to enable INSERT/UPDATE/DELETE
 - Queries are validated server-side to prevent SQL injection
+- Table names are validated using regex pattern (alphanumeric + underscores only)
 - Query execution is time-limited to 30 seconds
 - Passwords are encrypted at rest
+- **IMPORTANT**: The demo version has authentication disabled on API endpoints (permission_classes = []). For production, enable authentication by setting `permission_classes = [IsAuthenticated]` in the DatabaseClientViewSet and other viewsets.
 
 ## Database Support
 

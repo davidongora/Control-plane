@@ -7,6 +7,13 @@ import sqlite3
 from contextlib import contextmanager
 
 
+def validate_identifier(identifier: str) -> bool:
+    """Validate SQL identifier (table name, column name) to prevent injection."""
+    # Allow only alphanumeric characters, underscores, and start with letter/underscore
+    pattern = r'^[a-zA-Z_][a-zA-Z0-9_]*$'
+    return bool(re.match(pattern, identifier))
+
+
 class DatabaseQueryManager:
     """Manager for executing database queries with security controls."""
     
@@ -220,6 +227,14 @@ class DatabaseQueryManager:
     
     def get_table_schema(self, table_name: str) -> Dict[str, Any]:
         """Get schema information for a table."""
+        # Validate table name to prevent SQL injection
+        if not validate_identifier(table_name):
+            return {
+                'success': False,
+                'error': 'Invalid table name. Table names must start with a letter or underscore and contain only alphanumeric characters and underscores.',
+                'columns': []
+            }
+        
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
@@ -239,6 +254,7 @@ class DatabaseQueryManager:
                         ORDER BY ordinal_position
                     """, (table_name, self.database))
                 elif self.db_type == 'sqlite':
+                    # For SQLite, use parameterized query with validated identifier
                     cursor.execute(f"PRAGMA table_info({table_name})")
                     # SQLite returns: cid, name, type, notnull, dflt_value, pk
                     columns = []
