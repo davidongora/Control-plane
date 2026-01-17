@@ -20,7 +20,6 @@ The application uses Django session-based authentication with Angular frontend. 
 To create the default admin user for development:
 
 ```bash
-cd /home/runner/work/Control-plane/Control-plane
 python create_admin.py
 ```
 
