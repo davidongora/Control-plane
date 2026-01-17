@@ -1,5 +1,11 @@
 <div class="server-health-container">
-  <h1>Server Health Monitoring</h1>
+  <div class="health-header">
+    <h1>Server Health Monitoring</h1>
+    <div class="connection-status">
+      <span [class]="wsConnected ? 'status-indicator connected' : 'status-indicator disconnected'"></span>
+      <span class="status-text">{{ wsConnected ? 'Live Monitoring' : 'Polling Mode' }}</span>
+    </div>
+  </div>
   
   <div *ngIf="server" class="server-info">
     <h2>{{ server.name }} ({{ server.ip_address }})</h2>

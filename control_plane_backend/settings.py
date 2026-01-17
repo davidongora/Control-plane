@@ -25,12 +25,13 @@ SECRET_KEY = 'django-insecure-_z=1gz%7(8#-kc7)iy4r60b*_7fz6at8@z5+aodfbl3#nxk@oe
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -39,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'channels',
     'servers',
 ]
 
@@ -71,6 +73,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'control_plane_backend.wsgi.application'
+ASGI_APPLICATION = 'control_plane_backend.asgi.application'
+
+# Channels configuration
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 
 # Database

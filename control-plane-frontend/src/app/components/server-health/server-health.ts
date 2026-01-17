@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Api, HealthMetrics, Server } from '../../services/api';
+import { WebSocketService, WebSocketMessage } from '../../services/websocket.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-server-health',
@@ -9,17 +11,21 @@ import { Api, HealthMetrics, Server } from '../../services/api';
   templateUrl: './server-health.html',
   styleUrl: './server-health.css',
 })
-export class ServerHealth implements OnInit {
+export class ServerHealth implements OnInit, OnDestroy {
   serverId!: number;
   server?: Server;
   currentMetrics?: HealthMetrics;
   historicalMetrics: any[] = [];
   loading = true;
-  refreshInterval: any;
+  wsConnected = false;
+  private wsSubscription?: Subscription;
+  private wsStatusSubscription?: Subscription;
+  private pollingInterval?: any;
 
   constructor(
     private api: Api,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private wsService: WebSocketService
   ) {}
 
   ngOnInit() {
@@ -28,18 +34,13 @@ export class ServerHealth implements OnInit {
       this.loadServerInfo();
       this.loadCurrentMetrics();
       this.loadHistoricalMetrics();
-      
-      // Refresh metrics every 30 seconds
-      this.refreshInterval = setInterval(() => {
-        this.loadCurrentMetrics();
-      }, 30000);
+      this.connectWebSocket();
     });
   }
 
   ngOnDestroy() {
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-    }
+    this.disconnectWebSocket();
+    this.stopPolling();
   }
 
   loadServerInfo() {
@@ -75,6 +76,76 @@ export class ServerHealth implements OnInit {
         console.error('Error loading historical metrics:', err);
       }
     });
+  }
+
+  connectWebSocket() {
+    const endpoint = `ws/health/${this.serverId}/`;
+    
+    this.wsSubscription = this.wsService.connect(endpoint).subscribe({
+      next: (message: WebSocketMessage) => {
+        if (message.type === 'health_update' && message.data) {
+          this.handleHealthUpdate(message.data);
+        } else if (message.type === 'error') {
+          console.error('WebSocket error:', message.message || message.error);
+        }
+      },
+      error: (err) => {
+        console.error('WebSocket subscription error:', err);
+      }
+    });
+
+    this.wsStatusSubscription = this.wsService.getConnectionStatus(endpoint).subscribe({
+      next: (connected) => {
+        this.wsConnected = connected;
+        if (!connected) {
+          console.log('WebSocket disconnected, falling back to polling');
+          this.startPolling();
+        } else {
+          console.log('WebSocket connected for health monitoring');
+          this.stopPolling();
+        }
+      }
+    });
+  }
+
+  disconnectWebSocket() {
+    if (this.wsSubscription) {
+      this.wsSubscription.unsubscribe();
+    }
+    if (this.wsStatusSubscription) {
+      this.wsStatusSubscription.unsubscribe();
+    }
+    this.wsService.disconnect(`ws/health/${this.serverId}/`);
+  }
+
+  handleHealthUpdate(data: any) {
+    if (data.connected) {
+      this.currentMetrics = {
+        cpu_usage: data.cpu_usage,
+        memory_usage: data.memory_usage,
+        disk_usage: data.disk_usage,
+        network_in: data.network_in,
+        network_out: data.network_out,
+      };
+      this.loading = false;
+    } else {
+      console.error('Server not connected:', data.error);
+    }
+  }
+
+  startPolling() {
+    if (this.pollingInterval) return;
+    
+    this.pollingInterval = setInterval(() => {
+      this.loadCurrentMetrics();
+    }, 30000); // Poll every 30 seconds
+  }
+
+  stopPolling() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = undefined;
+    }
   }
 
   getHealthClass(value: number, type: 'cpu' | 'memory' | 'disk'): string {
