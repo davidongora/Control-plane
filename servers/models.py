@@ -1,6 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import validate_ipv4_address
+from cryptography.fernet import Fernet
+from django.conf import settings
+import base64
+import hashlib
 
 class Server(models.Model):
     """Model representing a managed Linux server."""
@@ -128,4 +132,69 @@ class ServerHealthMetrics(models.Model):
 
     def __str__(self):
         return f"{self.server.name} metrics at {self.timestamp}"
+
+
+class DatabaseClient(models.Model):
+    """Model representing a database connection for a server."""
+    DB_TYPES = [
+        ('postgresql', 'PostgreSQL'),
+        ('mysql', 'MySQL'),
+        ('sqlite', 'SQLite'),
+    ]
+    
+    DEFAULT_PORTS = {
+        'postgresql': 5432,
+        'mysql': 3306,
+        'sqlite': None,
+    }
+    
+    server = models.ForeignKey(Server, on_delete=models.CASCADE, related_name='database_clients')
+    name = models.CharField(max_length=255, help_text="Connection name")
+    db_type = models.CharField(max_length=20, choices=DB_TYPES)
+    database_name = models.CharField(max_length=255)
+    host = models.CharField(max_length=255, blank=True, null=True, help_text="Defaults to server IP")
+    port = models.IntegerField(blank=True, null=True, help_text="Defaults based on db_type")
+    username = models.CharField(max_length=100)
+    password_encrypted = models.TextField(help_text="Encrypted password")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['server', 'name']
+        ordering = ['server', 'name']
+    
+    def __str__(self):
+        return f"{self.name} ({self.db_type}) on {self.server.name}"
+    
+    def get_encryption_key(self):
+        """Generate encryption key from Django SECRET_KEY."""
+        secret = settings.SECRET_KEY.encode()
+        key = base64.urlsafe_b64encode(hashlib.sha256(secret).digest())
+        return key
+    
+    def set_password(self, raw_password):
+        """Encrypt and store password."""
+        if raw_password:
+            cipher = Fernet(self.get_encryption_key())
+            encrypted = cipher.encrypt(raw_password.encode())
+            self.password_encrypted = encrypted.decode()
+    
+    def get_password(self):
+        """Decrypt and return password."""
+        if self.password_encrypted:
+            try:
+                cipher = Fernet(self.get_encryption_key())
+                decrypted = cipher.decrypt(self.password_encrypted.encode())
+                return decrypted.decode()
+            except Exception:
+                return None
+        return None
+    
+    def get_host(self):
+        """Return host, defaulting to server IP if not set."""
+        return self.host or self.server.ip_address
+    
+    def get_port(self):
+        """Return port, defaulting based on db_type if not set."""
+        return self.port or self.DEFAULT_PORTS.get(self.db_type)
 

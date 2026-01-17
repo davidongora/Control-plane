@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Server, Service, NginxSite, Project, ServerHealthMetrics
+from .models import Server, Service, NginxSite, Project, ServerHealthMetrics, DatabaseClient
 
 
 @admin.register(Server)
@@ -36,3 +36,12 @@ class ServerHealthMetricsAdmin(admin.ModelAdmin):
     list_display = ['server', 'cpu_usage', 'memory_usage', 'disk_usage', 'timestamp']
     list_filter = ['server', 'timestamp']
     readonly_fields = ['timestamp']
+
+
+@admin.register(DatabaseClient)
+class DatabaseClientAdmin(admin.ModelAdmin):
+    list_display = ['name', 'server', 'db_type', 'database_name', 'username', 'created_at']
+    list_filter = ['db_type', 'server']
+    search_fields = ['name', 'database_name', 'server__name']
+    readonly_fields = ['created_at', 'updated_at']
+    exclude = ['password_encrypted']

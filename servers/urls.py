@@ -10,6 +10,7 @@ router.register(r'services', views.ServiceViewSet)
 router.register(r'nginx-sites', views.NginxSiteViewSet)
 router.register(r'projects', views.ProjectViewSet)
 router.register(r'health-metrics', views.ServerHealthMetricsViewSet)
+router.register(r'database-clients', views.DatabaseClientViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

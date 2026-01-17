@@ -69,6 +69,32 @@ export interface HealthMetrics {
   timestamp?: string;
 }
 
+export interface DatabaseClient {
+  id?: number;
+  server: number;
+  server_name?: string;
+  name: string;
+  db_type: 'postgresql' | 'mysql' | 'sqlite';
+  database_name: string;
+  host?: string;
+  port?: number;
+  username: string;
+  password?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface QueryResult {
+  success: boolean;
+  columns: string[];
+  rows: any[];
+  total_rows: number;
+  page: number;
+  page_size: number;
+  affected_rows?: number;
+  error?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -203,5 +229,54 @@ export class Api {
       ? `${this.baseUrl}/health-metrics/?server_id=${serverId}`
       : `${this.baseUrl}/health-metrics/`;
     return this.http.get(url);
+  }
+
+  // Database client endpoints
+  getDatabaseClients(serverId?: number): Observable<any> {
+    const url = serverId
+      ? `${this.baseUrl}/database-clients/?server_id=${serverId}`
+      : `${this.baseUrl}/database-clients/`;
+    return this.http.get(url);
+  }
+
+  getDatabaseClient(id: number): Observable<DatabaseClient> {
+    return this.http.get<DatabaseClient>(`${this.baseUrl}/database-clients/${id}/`);
+  }
+
+  createDatabaseClient(client: DatabaseClient): Observable<DatabaseClient> {
+    return this.http.post<DatabaseClient>(`${this.baseUrl}/database-clients/`, client);
+  }
+
+  updateDatabaseClient(id: number, client: DatabaseClient): Observable<DatabaseClient> {
+    return this.http.put<DatabaseClient>(`${this.baseUrl}/database-clients/${id}/`, client);
+  }
+
+  deleteDatabaseClient(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/database-clients/${id}/`);
+  }
+
+  testDatabaseConnection(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/database-clients/${id}/test_connection/`, {});
+  }
+
+  getDatabaseTables(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/database-clients/${id}/tables/`);
+  }
+
+  getDatabaseTableSchema(id: number, tableName: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/database-clients/${id}/table_schema/?table_name=${tableName}`);
+  }
+
+  executeDatabaseQuery(id: number, query: string, allowWrite: boolean = false, page: number = 1, pageSize: number = 100): Observable<QueryResult> {
+    return this.http.post<QueryResult>(`${this.baseUrl}/database-clients/${id}/query/`, {
+      query,
+      allow_write: allowWrite,
+      page,
+      page_size: pageSize
+    });
+  }
+
+  getDatabaseRecords(id: number, tableName: string, page: number = 1, pageSize: number = 100): Observable<QueryResult> {
+    return this.http.get<QueryResult>(`${this.baseUrl}/database-clients/${id}/records/?table_name=${tableName}&page=${page}&page_size=${pageSize}`);
   }
 }

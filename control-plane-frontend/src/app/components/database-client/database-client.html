@@ -1,0 +1,262 @@
+<div class="database-client-container">
+  <div class="header">
+    <h2>Database Client</h2>
+    <button class="btn-primary" (click)="toggleAddForm()">
+      {{ showAddForm ? 'Cancel' : '+ Add Database Connection' }}
+    </button>
+  </div>
+
+  <!-- Add Database Client Form -->
+  @if (showAddForm) {
+    <div class="add-form-card">
+      <h3>Add Database Connection</h3>
+      
+      @if (errorMessage) {
+        <div class="alert alert-error">{{ errorMessage }}</div>
+      }
+      @if (successMessage) {
+        <div class="alert alert-success">{{ successMessage }}</div>
+      }
+
+      <form class="form-grid">
+        <div class="form-group">
+          <label>Server *</label>
+          <select [(ngModel)]="newClient.server" name="server" required>
+            <option [value]="0" disabled>Select a server</option>
+            @for (server of servers; track server.id) {
+              <option [value]="server.id">{{ server.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Connection Name *</label>
+          <input type="text" [(ngModel)]="newClient.name" name="name" placeholder="My Database" required />
+        </div>
+
+        <div class="form-group">
+          <label>Database Type *</label>
+          <select [(ngModel)]="newClient.db_type" name="db_type" required>
+            <option value="postgresql">PostgreSQL</option>
+            <option value="mysql">MySQL</option>
+            <option value="sqlite">SQLite</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Database Name *</label>
+          <input type="text" [(ngModel)]="newClient.database_name" name="database_name" placeholder="mydb" required />
+        </div>
+
+        <div class="form-group">
+          <label>Host (optional)</label>
+          <input type="text" [(ngModel)]="newClient.host" name="host" placeholder="Defaults to server IP" />
+        </div>
+
+        <div class="form-group">
+          <label>Port (optional)</label>
+          <input type="number" [(ngModel)]="newClient.port" name="port" placeholder="Defaults by DB type" />
+        </div>
+
+        <div class="form-group">
+          <label>Username *</label>
+          <input type="text" [(ngModel)]="newClient.username" name="username" placeholder="dbuser" required />
+        </div>
+
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" [(ngModel)]="newClient.password" name="password" placeholder="••••••••" required />
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-primary" (click)="addDatabaseClient()">
+            Add Connection
+          </button>
+          <button type="button" class="btn-secondary" (click)="toggleAddForm()">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- Database Connections List -->
+  <div class="connections-section">
+    <h3>Database Connections</h3>
+    
+    @if (loading) {
+      <div class="loading">Loading database connections...</div>
+    } @else if (databaseClients.length === 0) {
+      <div class="empty-state">
+        <p>No database connections configured.</p>
+        <p>Click "Add Database Connection" to get started.</p>
+      </div>
+    } @else {
+      <div class="connections-grid">
+        @for (client of databaseClients; track client.id) {
+          <div class="connection-card" [class.selected]="selectedClient?.id === client.id">
+            <div class="connection-header">
+              <h4>{{ client.name }}</h4>
+              <span class="db-type-badge">{{ client.db_type }}</span>
+            </div>
+            <div class="connection-details">
+              <p><strong>Server:</strong> {{ client.server_name }}</p>
+              <p><strong>Database:</strong> {{ client.database_name }}</p>
+              <p><strong>Username:</strong> {{ client.username }}</p>
+            </div>
+            <div class="connection-actions">
+              <button class="btn-small btn-primary" (click)="selectClient(client)">
+                Select
+              </button>
+              <button class="btn-small btn-secondary" (click)="testConnection(client)">
+                Test
+              </button>
+              <button class="btn-small btn-danger" (click)="deleteDatabaseClient(client)">
+                Delete
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Query Interface -->
+  @if (selectedClient) {
+    <div class="query-section">
+      <div class="query-header">
+        <h3>Query: {{ selectedClient.name }} ({{ selectedClient.db_type }})</h3>
+        <button class="btn-secondary" (click)="toggleTableBrowser()">
+          {{ showTableBrowser ? 'Hide' : 'Show' }} Tables
+        </button>
+      </div>
+
+      <!-- Table Browser -->
+      @if (showTableBrowser) {
+        <div class="table-browser">
+          <h4>Tables</h4>
+          @if (loadingTables) {
+            <div class="loading">Loading tables...</div>
+          } @else if (tables.length === 0) {
+            <p class="no-tables">No tables found</p>
+          } @else {
+            <div class="tables-list">
+              @for (table of tables; track table) {
+                <button 
+                  class="table-item"
+                  [class.selected]="selectedTable === table"
+                  (click)="selectTable(table)">
+                  📋 {{ table }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Query Editor -->
+      <div class="query-editor">
+        <label>
+          <strong>SQL Query</strong>
+          <span class="hint">Write your SQL query below (SELECT statements recommended)</span>
+        </label>
+        <textarea 
+          [(ngModel)]="query"
+          placeholder="SELECT * FROM table_name WHERE condition = 'value'"
+          rows="6"
+          class="query-input"></textarea>
+        
+        <div class="query-controls">
+          <div class="query-options">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="allowWrite" />
+              Allow Write Operations (INSERT, UPDATE, DELETE)
+            </label>
+          </div>
+          <div class="query-buttons">
+            <button 
+              class="btn-primary" 
+              (click)="executeQuery()" 
+              [disabled]="executing || !query.trim()">
+              {{ executing ? 'Executing...' : 'Execute Query' }}
+            </button>
+            <button class="btn-secondary" (click)="clearResults()">
+              Clear Results
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      @if (errorMessage) {
+        <div class="alert alert-error">{{ errorMessage }}</div>
+      }
+      @if (successMessage) {
+        <div class="alert alert-success">{{ successMessage }}</div>
+      }
+
+      <!-- Query Results -->
+      @if (queryResult && queryResult.success) {
+        <div class="results-section">
+          <div class="results-header">
+            <h4>Query Results</h4>
+            <div class="results-info">
+              <span>{{ queryResult.total_rows }} total rows</span>
+              @if (queryResult.affected_rows && queryResult.affected_rows > 0) {
+                <span class="affected-rows">{{ queryResult.affected_rows }} rows affected</span>
+              }
+            </div>
+          </div>
+
+          @if (queryResult.rows.length > 0) {
+            <div class="table-container">
+              <table class="results-table">
+                <thead>
+                  <tr>
+                    @for (column of queryResult.columns; track column) {
+                      <th>{{ column }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of queryResult.rows; track $index) {
+                    <tr>
+                      @for (column of queryResult.columns; track column) {
+                        <td>{{ row[column] !== null && row[column] !== undefined ? row[column] : 'NULL' }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (getTotalPages() > 1) {
+              <div class="pagination">
+                <button 
+                  class="btn-small" 
+                  (click)="previousPage()" 
+                  [disabled]="currentPage === 1 || executing">
+                  ← Previous
+                </button>
+                <span class="page-info">
+                  Page {{ currentPage }} of {{ getTotalPages() }}
+                </span>
+                <button 
+                  class="btn-small" 
+                  (click)="nextPage()" 
+                  [disabled]="currentPage >= getTotalPages() || executing">
+                  Next →
+                </button>
+              </div>
+            }
+          } @else {
+            <div class="no-results">
+              <p>Query executed successfully but returned no rows.</p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

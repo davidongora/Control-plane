@@ -6,6 +6,7 @@ import { NginxSites } from './components/nginx-sites/nginx-sites';
 import { Projects } from './components/projects/projects';
 import { ServerHealth } from './components/server-health/server-health';
 import { Login } from './components/login/login';
+import { DatabaseClientComponent } from './components/database-client/database-client';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -17,4 +18,5 @@ export const routes: Routes = [
   { path: 'nginx-sites', component: NginxSites, canActivate: [authGuard] },
   { path: 'projects', component: Projects, canActivate: [authGuard] },
   { path: 'server-health/:id', component: ServerHealth, canActivate: [authGuard] },
+  { path: 'database-client', component: DatabaseClientComponent, canActivate: [authGuard] },
 ];

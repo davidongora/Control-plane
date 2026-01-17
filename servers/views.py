@@ -5,13 +5,15 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
-from .models import Server, Service, NginxSite, Project, ServerHealthMetrics
+from .models import Server, Service, NginxSite, Project, ServerHealthMetrics, DatabaseClient
 from .serializers import (
     ServerSerializer, ServerCreateSerializer, ServiceSerializer,
-    NginxSiteSerializer, ProjectSerializer, ServerHealthMetricsSerializer
+    NginxSiteSerializer, ProjectSerializer, ServerHealthMetricsSerializer,
+    DatabaseClientSerializer
 )
 from .ssh_manager import SSHConnectionManager
 from .service_managers import ServiceManager, NginxManager, GunicornManager, DatabaseManager
+from .database_manager import DatabaseQueryManager
 
 
 class ServerViewSet(viewsets.ModelViewSet):
@@ -313,3 +315,210 @@ class ServerHealthMetricsViewSet(viewsets.ReadOnlyModelViewSet):
         if server_id:
             queryset = queryset.filter(server_id=server_id)
         return queryset[:100]  # Limit to last 100 records
+
+
+class DatabaseClientViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing database clients."""
+    queryset = DatabaseClient.objects.all()
+    serializer_class = DatabaseClientSerializer
+    permission_classes = []  # AllowAny for demo
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        server_id = self.request.query_params.get('server_id', None)
+        if server_id:
+            queryset = queryset.filter(server_id=server_id)
+        return queryset
+    
+    @action(detail=True, methods=['post'])
+    def test_connection(self, request, pk=None):
+        """Test database connection."""
+        db_client = self.get_object()
+        
+        try:
+            db_manager = DatabaseQueryManager(
+                db_type=db_client.db_type,
+                host=db_client.get_host(),
+                port=db_client.get_port(),
+                database=db_client.database_name,
+                username=db_client.username,
+                password=db_client.get_password()
+            )
+            
+            success, message = db_manager.test_connection()
+            
+            if success:
+                return Response({
+                    'success': True,
+                    'message': message
+                })
+            else:
+                return Response({
+                    'success': False,
+                    'message': message
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f"Connection test failed: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['get'])
+    def tables(self, request, pk=None):
+        """List all tables in the database."""
+        db_client = self.get_object()
+        
+        try:
+            db_manager = DatabaseQueryManager(
+                db_type=db_client.db_type,
+                host=db_client.get_host(),
+                port=db_client.get_port(),
+                database=db_client.database_name,
+                username=db_client.username,
+                password=db_client.get_password()
+            )
+            
+            result = db_manager.list_tables()
+            
+            if result['success']:
+                return Response(result)
+            else:
+                return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e),
+                'tables': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['get'])
+    def table_schema(self, request, pk=None):
+        """Get schema for a specific table."""
+        db_client = self.get_object()
+        table_name = request.query_params.get('table_name')
+        
+        if not table_name:
+            return Response({
+                'success': False,
+                'error': 'table_name parameter is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            db_manager = DatabaseQueryManager(
+                db_type=db_client.db_type,
+                host=db_client.get_host(),
+                port=db_client.get_port(),
+                database=db_client.database_name,
+                username=db_client.username,
+                password=db_client.get_password()
+            )
+            
+            result = db_manager.get_table_schema(table_name)
+            
+            if result['success']:
+                return Response(result)
+            else:
+                return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e),
+                'columns': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
+    def query(self, request, pk=None):
+        """Execute a database query."""
+        db_client = self.get_object()
+        query = request.data.get('query', '').strip()
+        allow_write = request.data.get('allow_write', False)
+        page = int(request.data.get('page', 1))
+        page_size = int(request.data.get('page_size', 100))
+        
+        if not query:
+            return Response({
+                'success': False,
+                'error': 'Query is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            db_manager = DatabaseQueryManager(
+                db_type=db_client.db_type,
+                host=db_client.get_host(),
+                port=db_client.get_port(),
+                database=db_client.database_name,
+                username=db_client.username,
+                password=db_client.get_password()
+            )
+            
+            result = db_manager.execute_query(
+                query=query,
+                allow_write=allow_write,
+                page=page,
+                page_size=page_size
+            )
+            
+            if result['success']:
+                return Response(result)
+            else:
+                return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e),
+                'columns': [],
+                'rows': [],
+                'total_rows': 0
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['get'])
+    def records(self, request, pk=None):
+        """Get records from a table with pagination."""
+        db_client = self.get_object()
+        table_name = request.query_params.get('table_name')
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 100))
+        
+        if not table_name:
+            return Response({
+                'success': False,
+                'error': 'table_name parameter is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Construct a safe SELECT query
+        query = f"SELECT * FROM {table_name}"
+        
+        try:
+            db_manager = DatabaseQueryManager(
+                db_type=db_client.db_type,
+                host=db_client.get_host(),
+                port=db_client.get_port(),
+                database=db_client.database_name,
+                username=db_client.username,
+                password=db_client.get_password()
+            )
+            
+            result = db_manager.execute_query(
+                query=query,
+                allow_write=False,
+                page=page,
+                page_size=page_size
+            )
+            
+            if result['success']:
+                return Response(result)
+            else:
+                return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e),
+                'columns': [],
+                'rows': [],
+                'total_rows': 0
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
