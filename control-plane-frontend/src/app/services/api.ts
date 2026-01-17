@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Server {
   id?: number;
@@ -70,7 +71,7 @@ export interface HealthMetrics {
   providedIn: 'root',
 })
 export class Api {
-  private baseUrl = 'http://localhost:8000/api';
+  private baseUrl = `${environment.apiUrl}/api`;
 
   constructor(private http: HttpClient) {}
 

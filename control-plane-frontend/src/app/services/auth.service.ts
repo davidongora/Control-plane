@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap, catchError, of } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 export interface User {
   id: number;
@@ -20,7 +21,7 @@ export interface LoginCredentials {
   providedIn: 'root',
 })
 export class AuthService {
-  private baseUrl = 'http://localhost:8000';
+  private baseUrl = environment.apiUrl;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -78,7 +79,7 @@ export class AuthService {
     );
   }
 
-  checkAuth(): Observable<User> {
+  checkAuth(): Observable<User | null> {
     return this.http.get<User>(`${this.baseUrl}/api/auth/user/`).pipe(
       tap(user => {
         this.currentUserSubject.next(user);
@@ -87,7 +88,7 @@ export class AuthService {
       catchError(() => {
         this.currentUserSubject.next(null);
         this.saveUserToStorage(null);
-        return of(null as any);
+        return of(null);
       })
     );
   }
