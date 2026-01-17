@@ -1,22 +1,35 @@
 <div class="app-container">
-  <nav class="navbar">
-    <div class="navbar-brand">
-      <h1>{{ title }}</h1>
-    </div>
-    <div class="navbar-menu">
-      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-      <a routerLink="/servers" routerLinkActive="active">Servers</a>
-      <a routerLink="/services" routerLinkActive="active">Services</a>
-      <a routerLink="/nginx-sites" routerLinkActive="active">Nginx Sites</a>
-      <a routerLink="/projects" routerLinkActive="active">Projects</a>
-    </div>
-  </nav>
+  @if (authService.isAuthenticated()) {
+    <nav class="navbar">
+      <div class="navbar-brand">
+        <h1>{{ title }}</h1>
+      </div>
+      <div class="navbar-menu">
+        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+        <a routerLink="/servers" routerLinkActive="active">Servers</a>
+        <a routerLink="/services" routerLinkActive="active">Services</a>
+        <a routerLink="/nginx-sites" routerLinkActive="active">Nginx Sites</a>
+        <a routerLink="/projects" routerLinkActive="active">Projects</a>
+      </div>
+      <div class="navbar-user">
+        @if (currentUser) {
+          <span class="user-info">
+            <span class="user-icon">👤</span>
+            {{ currentUser.username }}
+          </span>
+          <button class="btn-logout" (click)="logout()">Logout</button>
+        }
+      </div>
+    </nav>
+  }
   
-  <main class="main-content">
+  <main class="main-content" [class.full-height]="!authService.isAuthenticated()">
     <router-outlet></router-outlet>
   </main>
   
-  <footer class="footer">
-    <p>&copy; 2026 Control Plane - Centralized Linux Server Management</p>
-  </footer>
+  @if (authService.isAuthenticated()) {
+    <footer class="footer">
+      <p>&copy; 2026 Control Plane - Centralized Linux Server Management</p>
+    </footer>
+  }
 </div>

@@ -5,13 +5,16 @@ import { Services } from './components/services/services';
 import { NginxSites } from './components/nginx-sites/nginx-sites';
 import { Projects } from './components/projects/projects';
 import { ServerHealth } from './components/server-health/server-health';
+import { Login } from './components/login/login';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
+  { path: 'login', component: Login },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
-  { path: 'dashboard', component: Dashboard },
-  { path: 'servers', component: Servers },
-  { path: 'services', component: Services },
-  { path: 'nginx-sites', component: NginxSites },
-  { path: 'projects', component: Projects },
-  { path: 'server-health/:id', component: ServerHealth },
+  { path: 'dashboard', component: Dashboard, canActivate: [authGuard] },
+  { path: 'servers', component: Servers, canActivate: [authGuard] },
+  { path: 'services', component: Services, canActivate: [authGuard] },
+  { path: 'nginx-sites', component: NginxSites, canActivate: [authGuard] },
+  { path: 'projects', component: Projects, canActivate: [authGuard] },
+  { path: 'server-health/:id', component: ServerHealth, canActivate: [authGuard] },
 ];
