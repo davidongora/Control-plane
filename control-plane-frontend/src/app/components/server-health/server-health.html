@@ -1,0 +1,75 @@
+<div class="server-health-container">
+  <div class="health-header">
+    <h1>Server Health Monitoring</h1>
+    <div class="connection-status">
+      <span [class]="wsConnected ? 'status-indicator connected' : 'status-indicator disconnected'"></span>
+      <span class="status-text">{{ wsConnected ? 'Live Monitoring' : 'Polling Mode' }}</span>
+    </div>
+  </div>
+  
+  <div *ngIf="server" class="server-info">
+    <h2>{{ server.name }} ({{ server.ip_address }})</h2>
+  </div>
+  
+  <div *ngIf="loading" class="loading">Loading health metrics...</div>
+  
+  <div *ngIf="!loading && currentMetrics" class="health-metrics">
+    <div class="metrics-grid">
+      <div class="metric-card" [ngClass]="getHealthClass(currentMetrics.cpu_usage, 'cpu')">
+        <h3>CPU Usage</h3>
+        <div class="metric-value">{{ currentMetrics.cpu_usage.toFixed(2) }}%</div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" [style.width.%]="currentMetrics.cpu_usage"></div>
+        </div>
+      </div>
+      
+      <div class="metric-card" [ngClass]="getHealthClass(currentMetrics.memory_usage, 'memory')">
+        <h3>Memory Usage</h3>
+        <div class="metric-value">{{ currentMetrics.memory_usage.toFixed(2) }}%</div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" [style.width.%]="currentMetrics.memory_usage"></div>
+        </div>
+      </div>
+      
+      <div class="metric-card" [ngClass]="getHealthClass(currentMetrics.disk_usage, 'disk')">
+        <h3>Disk Usage</h3>
+        <div class="metric-value">{{ currentMetrics.disk_usage.toFixed(2) }}%</div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" [style.width.%]="currentMetrics.disk_usage"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div *ngIf="historicalMetrics.length > 0" class="historical-metrics">
+    <h2>Historical Metrics</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>CPU (%)</th>
+          <th>Memory (%)</th>
+          <th>Disk (%)</th>
+          <th>Network In</th>
+          <th>Network Out</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let metric of historicalMetrics">
+          <td>{{ metric.timestamp | date:'medium' }}</td>
+          <td [ngClass]="getHealthClass(metric.cpu_usage, 'cpu')">
+            {{ metric.cpu_usage.toFixed(2) }}%
+          </td>
+          <td [ngClass]="getHealthClass(metric.memory_usage, 'memory')">
+            {{ metric.memory_usage.toFixed(2) }}%
+          </td>
+          <td [ngClass]="getHealthClass(metric.disk_usage, 'disk')">
+            {{ metric.disk_usage.toFixed(2) }}%
+          </td>
+          <td>{{ metric.network_in || 0 }}</td>
+          <td>{{ metric.network_out || 0 }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

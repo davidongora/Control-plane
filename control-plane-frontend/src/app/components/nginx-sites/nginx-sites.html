@@ -1,0 +1,50 @@
+<div class="nginx-sites-container">
+  <h1>Nginx Sites Management</h1>
+  
+  <div *ngIf="loading" class="loading">Loading nginx sites...</div>
+  
+  <div *ngIf="!loading" class="sites-list">
+    <table>
+      <thead>
+        <tr>
+          <th>Site Name</th>
+          <th>Server</th>
+          <th>Domain</th>
+          <th>Enabled</th>
+          <th>SSL</th>
+          <th>Upstream Port</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let site of sites">
+          <td>{{ site.site_name }}</td>
+          <td>{{ site.server_name }}</td>
+          <td>{{ site.domain }}</td>
+          <td>
+            <span [class]="site.is_enabled ? 'badge-success' : 'badge-secondary'">
+              {{ site.is_enabled ? 'Yes' : 'No' }}
+            </span>
+          </td>
+          <td>
+            <span [class]="site.has_ssl ? 'badge-success' : 'badge-secondary'">
+              {{ site.has_ssl ? 'Yes' : 'No' }}
+            </span>
+          </td>
+          <td>{{ site.upstream_port || '-' }}</td>
+          <td>
+            <button (click)="enableSite(site)" class="btn-sm btn-success"
+                    [disabled]="site.is_enabled">Enable</button>
+            <button (click)="disableSite(site)" class="btn-sm btn-warning"
+                    [disabled]="!site.is_enabled">Disable</button>
+            <button (click)="viewConfig(site)" class="btn-sm">View Config</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div *ngIf="sites.length === 0" class="empty-state">
+      No Nginx sites found. Sites will be discovered from your servers.
+    </div>
+  </div>
+</div>
