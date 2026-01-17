@@ -1,0 +1,53 @@
+<div class="services-container">
+  <h1>Services Management</h1>
+  
+  <div *ngIf="loading" class="loading">Loading services...</div>
+  
+  <div *ngIf="!loading" class="services-list">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Server</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>PID</th>
+          <th>CPU Usage</th>
+          <th>Memory (MB)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let service of services">
+          <td>{{ service.name }}</td>
+          <td>{{ service.server_name }}</td>
+          <td>{{ service.service_type }}</td>
+          <td>
+            <span [ngClass]="{
+              'badge-success': service.status === 'running',
+              'badge-warning': service.status === 'stopped',
+              'badge-danger': service.status === 'failed',
+              'badge-secondary': service.status === 'unknown'
+            }">
+              {{ service.status }}
+            </span>
+          </td>
+          <td>{{ service.pid || '-' }}</td>
+          <td>{{ service.cpu_usage ? service.cpu_usage.toFixed(2) + '%' : '-' }}</td>
+          <td>{{ service.memory_usage ? service.memory_usage.toFixed(2) : '-' }}</td>
+          <td>
+            <button (click)="startService(service)" class="btn-sm btn-success" 
+                    [disabled]="service.status === 'running'">Start</button>
+            <button (click)="stopService(service)" class="btn-sm btn-warning"
+                    [disabled]="service.status === 'stopped'">Stop</button>
+            <button (click)="restartService(service)" class="btn-sm">Restart</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div *ngIf="services.length === 0" class="empty-state">
+      No services found. Services will be discovered automatically when you add servers.
+    </div>
+  </div>
+</div>

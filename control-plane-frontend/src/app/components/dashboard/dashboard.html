@@ -1,0 +1,68 @@
+<div class="dashboard">
+  <h1>Control Plane Dashboard</h1>
+  
+  <div *ngIf="loading" class="loading">Loading...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+  
+  <div *ngIf="!loading && !error" class="dashboard-content">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Servers</h3>
+        <div class="stat-value">{{ servers.length }}</div>
+        <a routerLink="/servers" class="stat-link">View All</a>
+      </div>
+      
+      <div class="stat-card">
+        <h3>Services</h3>
+        <div class="stat-value">{{ services.length }}</div>
+        <a routerLink="/services" class="stat-link">View All</a>
+      </div>
+      
+      <div class="stat-card">
+        <h3>Active Servers</h3>
+        <div class="stat-value">{{ servers.filter(s => s.is_active).length }}</div>
+      </div>
+      
+      <div class="stat-card">
+        <h3>Running Services</h3>
+        <div class="stat-value">{{ services.filter(s => s.status === 'running').length }}</div>
+      </div>
+    </div>
+    
+    <div class="servers-list">
+      <h2>Servers Overview</h2>
+      <div *ngIf="servers.length === 0" class="empty-state">
+        No servers configured. <a routerLink="/servers">Add a server</a> to get started.
+      </div>
+      
+      <table *ngIf="servers.length > 0">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>IP Address</th>
+            <th>Status</th>
+            <th>Services</th>
+            <th>Projects</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let server of servers">
+            <td>{{ server.name }}</td>
+            <td>{{ server.ip_address }}</td>
+            <td>
+              <span [class]="server.is_active ? 'status-active' : 'status-inactive'">
+                {{ server.is_active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td>{{ server.services_count || 0 }}</td>
+            <td>{{ server.projects_count || 0 }}</td>
+            <td>
+              <a [routerLink]="['/server-health', server.id]" class="btn-sm">View Health</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

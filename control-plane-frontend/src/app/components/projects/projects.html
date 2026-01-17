@@ -1,0 +1,40 @@
+<div class="projects-container">
+  <h1>Projects Management</h1>
+  
+  <div *ngIf="loading" class="loading">Loading projects...</div>
+  
+  <div *ngIf="!loading" class="projects-list">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Server</th>
+          <th>Type</th>
+          <th>Path</th>
+          <th>Branch</th>
+          <th>Status</th>
+          <th>Last Deployed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let project of projects">
+          <td>{{ project.name }}</td>
+          <td>{{ project.server_name }}</td>
+          <td>{{ project.project_type }}</td>
+          <td><code>{{ project.path }}</code></td>
+          <td>{{ project.branch || '-' }}</td>
+          <td>
+            <span [class]="project.is_active ? 'badge-success' : 'badge-secondary'">
+              {{ project.is_active ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td>{{ project.last_deployed ? (project.last_deployed | date:'short') : 'Never' }}</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div *ngIf="projects.length === 0" class="empty-state">
+      No projects found. Projects will be discovered from your servers.
+    </div>
+  </div>
+</div>
