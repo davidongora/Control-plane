@@ -21,6 +21,14 @@ export class Dashboard implements OnInit {
     this.loadDashboardData();
   }
 
+  get activeServersCount(): number {
+    return this.servers.filter(s => s.is_active).length;
+  }
+
+  get runningServicesCount(): number {
+    return this.services.filter(s => s.status === 'running').length;
+  }
+
   loadDashboardData() {
     this.loading = true;
     this.error = null;
