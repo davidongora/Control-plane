@@ -40,8 +40,8 @@ export class Servers implements OnInit {
   }
 
   static atLeastOneAuthMethod(form: FormGroup) {
-    const password = form.get('password')?.value;
-    const ssh_key = form.get('ssh_key')?.value;
+    const password = form.get('password')?.value?.trim();
+    const ssh_key = form.get('ssh_key')?.value?.trim();
     return password || ssh_key ? null : { noAuthMethod: true };
   }
 
