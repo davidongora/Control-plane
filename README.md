@@ -25,24 +25,29 @@ Unified web dashboard built with Python Django and Angular for centralized Linux
 Control-plane is a comprehensive server management platform that provides:
 
 - **Centralized Server Management**: Manage multiple Linux servers from a single interface
+- **Real-time WebSocket Updates**: Live monitoring with sub-10-second updates for health metrics and service status
 - **Service Monitoring**: Real-time monitoring of Nginx, Gunicorn, PostgreSQL, MySQL, Redis and other services
 - **Configuration Management**: Configure Nginx sites, SSL certificates, and Gunicorn processes
-- **Health Monitoring**: Track CPU, memory, and disk usage across all servers
+- **Health Monitoring**: Track CPU, memory, and disk usage across all servers with live updates
 - **Project Inventory**: Keep track of deployed projects and applications
+- **Database Client**: Web-based SQL query interface for PostgreSQL, MySQL, and SQLite
 - **Secure SSH Access**: All operations performed securely via SSH
 
 ## Architecture
 
 ### Backend (Django)
 - **REST API**: Full RESTful API built with Django REST Framework
+- **WebSocket Support**: Real-time updates via Django Channels and Redis
 - **SSH Management**: Secure SSH connections using Paramiko
 - **Service Managers**: Specialized managers for Nginx, Gunicorn, and databases
-- **Real-time Monitoring**: Health metrics collection and storage
+- **Real-time Monitoring**: Health metrics collection and storage with live streaming
 - **Database**: SQLite (development) / PostgreSQL (production)
 
 ### Frontend (Angular 21)
 - **Modern UI**: Responsive dashboard built with Angular 21
-- **Real-time Updates**: Live health monitoring and service status
+- **WebSocket Integration**: Live updates with automatic reconnection and fallback to polling
+- **Real-time Updates**: Live health monitoring and service status (10-second intervals)
+- **Connection Status**: Visual indicators showing live/offline mode
 - **CRUD Operations**: Full create, read, update, delete for all resources
 - **Visual Management**: Intuitive interfaces for server and service management
 
@@ -73,11 +78,14 @@ Control-plane is a comprehensive server management platform that provides:
 - View project paths and repositories
 
 ### Health Monitoring
-- Real-time CPU usage tracking
-- Memory usage monitoring
-- Disk space utilization
+- Real-time CPU usage tracking (WebSocket updates every 10 seconds)
+- Memory usage monitoring with live updates
+- Disk space utilization tracking
+- Network I/O statistics
 - Historical metrics storage
 - Visual health indicators
+- Connection status display (live/offline mode)
+- Automatic fallback to polling if WebSocket fails
 
 ## Installation
 
@@ -85,6 +93,7 @@ Control-plane is a comprehensive server management platform that provides:
 - Python 3.8+
 - Node.js 18+
 - npm or yarn
+- **Redis Server** (for WebSocket real-time updates)
 - SSH access to target servers
 
 ### Backend Setup
@@ -102,14 +111,37 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Run migrations:
+3. Install and start Redis (required for WebSocket support):
+```bash
+# Ubuntu/Debian
+sudo apt-get install redis-server
+sudo systemctl start redis-server
+
+# macOS
+brew install redis
+brew services start redis
+
+# Docker
+docker run -d -p 6379:6379 redis:alpine
+```
+
+4. Run migrations:
 ```bash
 python manage.py migrate
 ```
 
-4. Create a superuser:
+5. Create a superuser:
 ```bash
 python manage.py createsuperuser
+```
+
+6. Start the development server:
+```bash
+python manage.py runserver
+```
+
+The API will be available at `http://localhost:8000/api/`
+WebSocket endpoints will be available at `ws://localhost:8000/ws/`
 ```
 
 5. Start the development server:
@@ -175,13 +207,17 @@ The application will be available at `http://localhost:4200/`
 ### Viewing Server Health
 
 1. From the Dashboard or Servers page, click "View Health"
-2. See real-time metrics:
+2. See real-time metrics with WebSocket updates every 10 seconds:
    - CPU usage percentage
    - Memory usage percentage
    - Disk usage percentage
+   - Network I/O statistics
 3. View historical metrics in table format
+4. Monitor connection status indicator (green=live, red=offline)
 
 ## API Documentation
+
+### REST API Endpoints
 
 ### Servers
 - `GET /api/servers/` - List all servers
@@ -217,6 +253,24 @@ The application will be available at `http://localhost:4200/`
 ### Health Metrics
 - `GET /api/health-metrics/?server_id={id}` - Get historical metrics
 
+### WebSocket Endpoints
+
+Real-time updates via WebSocket connections:
+
+- `ws://localhost:8000/ws/health/{server_id}/` - Real-time health monitoring (10-second updates)
+- `ws://localhost:8000/ws/services/{server_id}/` - Real-time service status updates
+- `ws://localhost:8000/ws/servers/` - All servers connection status
+
+**Message Format:**
+```json
+{
+  "type": "health_update|service_status|server_status",
+  "data": { /* update data */ }
+}
+```
+
+For detailed WebSocket documentation, see [WEBSOCKET_IMPLEMENTATION.md](WEBSOCKET_IMPLEMENTATION.md)
+
 ## Security Considerations
 
 1. **SSH Keys**: Store SSH private keys securely, consider using Django's encryption
@@ -236,6 +290,7 @@ Edit `control_plane_backend/settings.py`:
 - `ALLOWED_HOSTS`: Add your domain
 - `DATABASES`: Configure PostgreSQL for production
 - `CORS_ALLOWED_ORIGINS`: Update for your frontend URL
+- `CHANNEL_LAYERS`: Configure Redis for WebSocket support (default: localhost:6379)
 
 ### Angular Environment
 Edit `control-plane-frontend/src/app/services/api.ts`:
@@ -246,9 +301,17 @@ Edit `control-plane-frontend/src/app/services/api.ts`:
 ### Backend Deployment
 1. Set environment variables
 2. Configure PostgreSQL database
-3. Run `python manage.py collectstatic`
-4. Use Gunicorn or uWSGI as WSGI server
-5. Configure Nginx as reverse proxy
+3. **Install and configure Redis server**
+4. Run `python manage.py collectstatic`
+5. Use **Daphne** (ASGI server) instead of Gunicorn for WebSocket support
+6. Configure Nginx as reverse proxy with WebSocket support
+
+**Start with Daphne:**
+```bash
+daphne -b 0.0.0.0 -p 8000 control_plane_backend.asgi:application
+```
+
+For detailed deployment instructions, see [WEBSOCKET_IMPLEMENTATION.md](WEBSOCKET_IMPLEMENTATION.md#production-deployment)
 
 ### Frontend Deployment
 1. Build the production bundle: `npm run build`
@@ -266,3 +329,13 @@ MIT License - feel free to use this project for personal or commercial purposes.
 ## Support
 
 For issues, questions, or contributions, please open an issue on GitHub.
+
+## Documentation
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick setup guide
+- **[FEATURES.md](FEATURES.md)** - Detailed feature list
+- **[WEBSOCKET_IMPLEMENTATION.md](WEBSOCKET_IMPLEMENTATION.md)** - WebSocket real-time updates documentation
+- **[WEBSOCKET_QUICKSTART.md](WEBSOCKET_QUICKSTART.md)** - Quick guide to setup WebSocket functionality
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide
+- **[DATABASE_CLIENT.md](DATABASE_CLIENT.md)** - Database client feature documentation

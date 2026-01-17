@@ -23,14 +23,19 @@
 - ✅ CPU usage monitoring
 - ✅ Memory usage tracking
 - ✅ Disk space utilization
+- ✅ Network I/O statistics
 - ✅ Historical metrics storage
 - ✅ Visual health indicators (good/warning/critical)
-- ✅ Auto-refresh every 30 seconds
+- ✅ **WebSocket real-time updates (every 10 seconds)**
+- ✅ **Automatic fallback to polling if WebSocket fails**
+- ✅ **Live connection status indicator**
 
 **Benefits:**
 - Identify performance issues quickly
 - Track resource trends over time
 - Proactive capacity planning
+- Real-time visibility with sub-10-second updates
+- No manual refresh needed
 
 ### 3. Service Management
 **Control systemd services across all servers**
@@ -40,11 +45,14 @@
 - ✅ Start/stop/restart services remotely
 - ✅ Monitor service resource usage (CPU, memory)
 - ✅ View process IDs (PIDs)
+- ✅ **Real-time service status updates via WebSocket**
+- ✅ **Multi-server monitoring simultaneously**
 
 **Benefits:**
 - Quick service troubleshooting
 - Centralized service control
 - Reduce downtime with faster response
+- Real-time notifications of service changes
 
 ### 4. Nginx Site Management
 **Manage Nginx web server configurations**
@@ -102,7 +110,9 @@
 - ✅ Overview statistics
 - ✅ Server list with quick actions
 - ✅ Service status grid
-- ✅ Real-time updates
+- ✅ **Real-time WebSocket updates**
+- ✅ **Live connection status indicators**
+- ✅ **Automatic reconnection on disconnect**
 - ✅ Responsive design
 - ✅ Intuitive navigation
 
@@ -110,6 +120,8 @@
 - Quick system overview
 - User-friendly interface
 - Works on desktop and tablet
+- Real-time data without manual refresh
+- Visual feedback on connection status
 
 ### 8. REST API
 **Complete programmatic access**
@@ -178,6 +190,9 @@
 - SQLite (development) / PostgreSQL (production)
 - Paramiko for SSH connections
 - RESTful API with Django REST Framework
+- **Django Channels for WebSocket support**
+- **Redis for real-time message passing**
+- **ASGI server (Daphne) for async support**
 - Real-time command execution
 - Robust error handling
 
@@ -185,6 +200,8 @@
 - Modern Angular 21 framework
 - TypeScript for type safety
 - Reactive programming with RxJS
+- **WebSocket service with automatic reconnection**
+- **Real-time data streaming**
 - Component-based architecture
 - Responsive CSS design
 - Single-page application
@@ -195,6 +212,8 @@
 - No agent installation required
 - Systemd service management
 - Nginx web server integration
+- **Redis for real-time messaging**
+- **WebSocket support for live updates**
 
 ## Limitations and Considerations
 
@@ -226,6 +245,7 @@
 - [ ] Log file viewing
 - [ ] Command history tracking
 - [ ] User roles and permissions
+- [ ] WebSocket broadcasting for system events
 
 ### Medium Term
 - [ ] Multi-user support with teams
