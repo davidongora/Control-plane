@@ -2,6 +2,24 @@
 
 Unified web dashboard built with Python Django and Angular for centralized Linux server management via SSH.
 
+## Screenshots
+
+### Dashboard
+![Dashboard](https://github.com/user-attachments/assets/9ca08760-3af2-407e-b666-2b15384f9706)
+*Main dashboard showing server statistics and overview*
+
+### Servers Management
+![Servers](https://github.com/user-attachments/assets/eb13df3c-1890-419d-9ac8-e330c50efacd)
+*Server list with connection details and management options*
+
+### Services Management
+![Services](https://github.com/user-attachments/assets/e560539b-4750-4349-9db8-7238dd749a14)
+*Service control panel with start/stop/restart capabilities*
+
+### Server Health Monitoring
+![Health Monitoring](https://github.com/user-attachments/assets/8ba353ce-bc82-4dda-b049-9e83441406d6)
+*Real-time CPU, memory, and disk usage monitoring*
+
 ## Overview
 
 Control-plane is a comprehensive server management platform that provides:

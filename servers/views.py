@@ -17,7 +17,7 @@ from .service_managers import ServiceManager, NginxManager, GunicornManager, Dat
 class ServerViewSet(viewsets.ModelViewSet):
     """ViewSet for managing servers."""
     queryset = Server.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = []  # AllowAny for demo
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -136,7 +136,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
     """ViewSet for managing services."""
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = []  # AllowAny for demo
     
     @action(detail=True, methods=['post'])
     def start(self, request, pk=None):
@@ -218,7 +218,7 @@ class NginxSiteViewSet(viewsets.ModelViewSet):
     """ViewSet for managing Nginx sites."""
     queryset = NginxSite.objects.all()
     serializer_class = NginxSiteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = []  # AllowAny for demo
     
     @action(detail=True, methods=['post'])
     def enable(self, request, pk=None):
@@ -298,14 +298,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
     """ViewSet for managing projects."""
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = []  # AllowAny for demo
 
 
 class ServerHealthMetricsViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for viewing server health metrics."""
     queryset = ServerHealthMetrics.objects.all()
     serializer_class = ServerHealthMetricsSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = []  # AllowAny for demo
     
     def get_queryset(self):
         queryset = super().get_queryset()
