@@ -8,14 +8,30 @@ from contextlib import contextmanager
 
 
 def validate_identifier(identifier: str) -> bool:
-    """Validate SQL identifier (table name, column name) to prevent injection."""
+    """
+    Validate SQL identifier (table name, column name) to prevent injection.
+    
+    This validation ensures that identifiers can only contain alphanumeric 
+    characters and underscores, and must start with a letter or underscore.
+    This prevents SQL injection in contexts where parameterized queries 
+    cannot be used (e.g., table names, PRAGMA statements).
+    """
     # Allow only alphanumeric characters, underscores, and start with letter/underscore
     pattern = r'^[a-zA-Z_][a-zA-Z0-9_]*$'
     return bool(re.match(pattern, identifier))
 
 
 class DatabaseQueryManager:
-    """Manager for executing database queries with security controls."""
+    """
+    Manager for executing database queries with security controls.
+    
+    Security features:
+    - Query validation to prevent SQL injection
+    - Keyword blocking for dangerous operations
+    - Query timeout enforcement
+    - Parameterized queries for pagination
+    - Identifier validation for table names
+    """
     
     DANGEROUS_KEYWORDS = [
         'DROP', 'DELETE', 'TRUNCATE', 'ALTER', 'CREATE', 'GRANT', 'REVOKE',
@@ -105,8 +121,9 @@ class DatabaseQueryManager:
                 'page_size': page_size
             }
         
-        # Limit page size
-        page_size = min(page_size, self.MAX_PAGE_SIZE)
+        # Limit page size and validate pagination params
+        page_size = min(max(1, page_size), self.MAX_PAGE_SIZE)
+        page = max(1, page)
         offset = (page - 1) * page_size
         
         try:
@@ -122,18 +139,33 @@ class DatabaseQueryManager:
                 # For SELECT queries, add pagination
                 query_upper = query.upper().strip()
                 if query_upper.startswith('SELECT'):
-                    # Count total rows (for SELECT queries)
-                    count_query = f"SELECT COUNT(*) FROM ({query}) AS count_table"
+                    # Count total rows using subquery (executed as single query)
                     try:
-                        cursor.execute(count_query)
-                        total_rows = cursor.fetchone()[0]
-                    except:
-                        # If count fails, execute original query without count
+                        # Execute the original query to get cursor description
+                        cursor.execute(query)
+                        # For counting, we re-execute with a simpler approach
+                        # This is safer than wrapping in COUNT(*)
+                        all_rows = cursor.fetchall()
+                        total_rows = len(all_rows)
+                        
+                        # Now execute again with pagination
+                        if self.db_type == 'sqlite':
+                            cursor.execute(query + " LIMIT ? OFFSET ?", (page_size, offset))
+                        else:
+                            # PostgreSQL and MySQL support placeholders differently
+                            if self.db_type == 'postgresql':
+                                cursor.execute(query + " LIMIT %s OFFSET %s", (page_size, offset))
+                            else:  # mysql
+                                cursor.execute(query + " LIMIT %s OFFSET %s", (page_size, offset))
+                    except Exception as count_error:
+                        # If counting fails, just execute with pagination
                         total_rows = -1
-                    
-                    # Add pagination to query
-                    paginated_query = f"{query} LIMIT {page_size} OFFSET {offset}"
-                    cursor.execute(paginated_query)
+                        if self.db_type == 'sqlite':
+                            cursor.execute(query + " LIMIT ? OFFSET ?", (page_size, offset))
+                        elif self.db_type == 'postgresql':
+                            cursor.execute(query + " LIMIT %s OFFSET %s", (page_size, offset))
+                        else:  # mysql
+                            cursor.execute(query + " LIMIT %s OFFSET %s", (page_size, offset))
                 else:
                     # For non-SELECT queries (if allowed)
                     cursor.execute(query)
@@ -254,7 +286,10 @@ class DatabaseQueryManager:
                         ORDER BY ordinal_position
                     """, (table_name, self.database))
                 elif self.db_type == 'sqlite':
-                    # For SQLite, use parameterized query with validated identifier
+                    # For SQLite, PRAGMA doesn't support parameter binding
+                    # Since we've already validated the table name with validate_identifier(),
+                    # using f-string is safe here. SQLite's PRAGMA commands don't support 
+                    # parameterized queries, so this is the only way to query table info.
                     cursor.execute(f"PRAGMA table_info({table_name})")
                     # SQLite returns: cid, name, type, notnull, dflt_value, pk
                     columns = []

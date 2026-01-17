@@ -523,7 +523,8 @@ class DatabaseClientViewSet(viewsets.ModelViewSet):
                 'error': 'Invalid table name. Table names must start with a letter or underscore and contain only alphanumeric characters and underscores.'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Construct a safe SELECT query
+        # Construct SELECT query (safe after validation)
+        # Note: Table names cannot be parameterized in SQL, but we've validated the identifier
         query = f"SELECT * FROM {table_name}"
         
         try:
